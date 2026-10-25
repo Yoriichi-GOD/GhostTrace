@@ -6,7 +6,7 @@ A local, read-only investigation workspace that checks whether a reported deleti
 
 ## Wispr Flow × Hacker House Goa
 
-Development was directed through spoken instructions dictated with Wispr Flow to an AI coding assistant. The assistant generated and revised code; the workflow was build, test, inspect the result, then dictate the next correction. The participant has confirmed that the recording captures actual voice-driven development. The public build-process video link will be added before the wildcard form is submitted.
+Development was directed through spoken instructions dictated with Wispr Flow to an AI coding assistant. The assistant generated and revised code; the workflow was build, test, inspect the result, then dictate the next correction. Watch the actual voice-driven development workflow: **[Wispr Flow × GhostTrace build-process video](https://youtu.be/rw3gSNBh9HQ)**.
 
 Wispr is the dictation tool used during development. The application itself runs offline and makes no model API calls. No Wispr SDK, Gemini, NVIDIA or OpenRouter integration is required to run it.
 
