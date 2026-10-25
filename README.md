@@ -9,6 +9,7 @@ GhostTrace is a local, read-only deletion-audit tool with an illustrated Noir in
 ## What you can do
 
 - Search and filter cases, compare a reported workflow status with the engine's finding, and inspect proof coverage.
+- Resize desktop panels with the dividers; use the expand button beside the tabs for more investigation space. Drag the map's bottom handle to adjust its height. Dividers also support arrow keys and double-click to reset.
 - Explore engine-backed identity/resource relationships in a selectable graph with zoom, pan, fit, filtering, and a relationship-table alternative.
 - Review separate event and evidence-capture clocks, including sources excluded after the cutoff.
 - Inspect case-scoped, masked source metadata and policy/action tables.

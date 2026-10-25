@@ -268,6 +268,7 @@
   }
 
   function renderTab() {
+    if (mapObserver) { mapObserver.disconnect(); mapObserver = null; }
     const root = $("#tab-content");
     root.replaceChildren();
     const detail = state.detail;
@@ -340,6 +341,85 @@
   }
   function refCell(ref) { return button(ref || "—", "ref-button", () => ref && loadEvidence(ref)); }
 
+
+  // Shared pointer and keyboard behavior for the panel and map separators.
+  function resizeHandle(handle, { axis, read, write, limits, step, direction = 1, activeClass }) {
+    let drag = null;
+    function sync() {
+      const [min, max] = limits();
+      handle.setAttribute("aria-valuemin", String(min));
+      handle.setAttribute("aria-valuemax", String(max));
+      handle.setAttribute("aria-valuenow", String(Math.round(read())));
+      handle.setAttribute("aria-valuetext", Math.round(read()) + " pixels");
+    }
+    function change(value) {
+      const [min, max] = limits();
+      write(Math.max(min, Math.min(max, Math.round(value / step) * step))); sync();
+    }
+    function end() { drag = null; document.body.classList.remove(activeClass); }
+    handle.addEventListener("pointerdown", event => {
+      if (event.button !== 0) return;
+      event.preventDefault(); handle.focus();
+      drag = { start: axis === "x" ? event.clientX : event.clientY, size: read() };
+      handle.setPointerCapture(event.pointerId); document.body.classList.add(activeClass);
+    });
+    handle.addEventListener("pointermove", event => {
+      if (!drag) return;
+      change(drag.size + direction * ((axis === "x" ? event.clientX : event.clientY) - drag.start));
+    });
+    for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) handle.addEventListener(name, end);
+    handle.addEventListener("dblclick", () => { write(null); sync(); });
+    handle.addEventListener("keydown", event => {
+      const backward = axis === "x" ? "ArrowLeft" : "ArrowUp";
+      const forward = axis === "x" ? "ArrowRight" : "ArrowDown";
+      if (![backward, forward, "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const [min, max] = limits();
+      change(event.key === "Home" ? min : event.key === "End" ? max : read() + (event.key === forward ? 1 : -1) * direction * step * (event.shiftKey ? 5 : 1));
+    });
+    sync(); return { sync, change };
+  }
+
+  let mapHeight = null, mapObserver = null;
+  function initializeWorkspaceLayout() {
+    const workspace = $("#workspace"), expand = $("#expand-workspace");
+    const desktop = matchMedia("(min-width: 1101px)");
+    const splitters = [];
+    for (const name of ["queue", "inspector"]) {
+      const panel = $(name === "queue" ? "#case-queue" : "#evidence-inspector");
+      const other = $(name === "queue" ? "#evidence-inspector" : "#case-queue");
+      const handle = $("#" + name + "-resizer");
+      const min = name === "queue" ? 150 : 220, max = name === "queue" ? 320 : 440;
+      const controls = resizeHandle(handle, {
+        axis: "x", step: 10, direction: name === "queue" ? 1 : -1, activeClass: "resizing-panels",
+        read: () => panel.getBoundingClientRect().width,
+        write: value => { if (value === null) workspace.removeAttribute("data-" + name + "-width"); else workspace.setAttribute("data-" + name + "-width", String(value)); },
+        limits: () => [min, Math.max(min, Math.min(max, Math.floor((workspace.clientWidth - other.getBoundingClientRect().width - 24 - 360) / 10) * 10))]
+      });
+      splitters.push({ name, panel, controls });
+    }
+    function reconcile() {
+      if (!desktop.matches || workspace.hidden) return;
+      for (const { name, panel, controls } of splitters) {
+        if (!panel.getBoundingClientRect().width) continue;
+        if (workspace.hasAttribute("data-" + name + "-width")) controls.change(panel.getBoundingClientRect().width);
+        else controls.sync();
+      }
+    }
+    new ResizeObserver(reconcile).observe(workspace);
+    $("#collapse-queue").addEventListener("click", reconcile);
+    function setExpanded(expanded) {
+      document.body.classList.toggle("workspace-focused", expanded);
+      expand.setAttribute("aria-pressed", String(expanded));
+      const label = expanded ? "Restore investigation layout" : "Expand investigation workspace";
+      expand.setAttribute("aria-label", label); expand.title = label;
+      reconcile();
+    }
+    expand.addEventListener("click", () => setExpanded(expand.getAttribute("aria-pressed") !== "true"));
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && expand.getAttribute("aria-pressed") === "true") { setExpanded(false); expand.focus(); }
+    });
+  }
 
   function lineageCanvas(graph) {
     const panel = el("section", "lineage-graph");
@@ -426,7 +506,29 @@
     svg.addEventListener("pointerdown",event=>{if(event.target!==svg)return;drag={x:event.clientX,y:event.clientY,vx:view.x,vy:view.y};svg.setPointerCapture(event.pointerId);});
     svg.addEventListener("pointermove",event=>{if(!drag)return;view.x=drag.vx-(event.clientX-drag.x)*view.w/svg.clientWidth;view.y=drag.vy-(event.clientY-drag.y)*view.h/svg.clientHeight;setViewBox();});
     svg.addEventListener("pointerup",()=>{drag=null;});svg.addEventListener("pointercancel",()=>{drag=null;});
-    filter.addEventListener("change",draw); panel.append(tools,svg,caption);draw();return panel;
+    filter.addEventListener("change",draw);
+    const resizer = el("div", "graph-resizer", "Drag to resize map");
+    resizer.setAttribute("role", "separator"); resizer.tabIndex = 0;
+    resizer.setAttribute("aria-orientation", "horizontal"); resizer.setAttribute("aria-label", "Resize evidence map height");
+    resizer.title = "Drag to resize · up/down keys to adjust · double-click to reset";
+    if (mapHeight !== null) panel.setAttribute("data-map-height", String(mapHeight));
+    panel.append(tools,svg,caption,resizer); draw();
+    const controls = resizeHandle(resizer, {
+      axis: "y", step: 20, activeClass: "resizing-map", limits: () => [220, 900],
+      read: () => svg.getBoundingClientRect().height || mapHeight || 270,
+      write: value => { mapHeight = value; if (value === null) fitMapHeight(); else panel.setAttribute("data-map-height", String(value)); }
+    });
+    function fitMapHeight() {
+      if (!panel.isConnected || mapHeight !== null) return;
+      const root = $("#tab-content"), spacing = getComputedStyle(root);
+      const available = matchMedia("(max-width: 580px)").matches ? 300 : root.clientHeight - parseFloat(spacing.paddingTop) - parseFloat(spacing.paddingBottom)
+        - tools.offsetHeight - caption.offsetHeight - resizer.offsetHeight - 4;
+      const height = Math.max(220, Math.min(900, Math.floor(available / 20) * 20));
+      panel.setAttribute("data-map-height", String(height));
+    }
+    mapObserver = new ResizeObserver(() => { fitMapHeight(); controls.sync(); });
+    mapObserver.observe($("#tab-content")); mapObserver.observe(tools); mapObserver.observe(caption);
+    return panel;
   }
 
 
@@ -658,5 +760,5 @@
 
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.isComposing) { event.preventDefault(); $("#command-form").requestSubmit(); }
   });
-  hydrateIcons(); clearCase(); pollStartup();
+  hydrateIcons(); initializeWorkspaceLayout(); clearCase(); pollStartup();
 })();
