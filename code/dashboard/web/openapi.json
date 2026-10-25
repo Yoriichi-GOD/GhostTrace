@@ -1,0 +1,242 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GhostTrace Local Read-Only API",
+    "version": "1.0.0",
+    "description": "Same-origin loopback API over the existing GhostTrace Python auditor. No source mutations or arbitrary file reads."
+  },
+  "servers": [
+    {
+      "url": "/api/ghosttrace/v1"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Engine and index status",
+        "responses": {
+          "200": {
+            "description": "Real local index state"
+          }
+        }
+      }
+    },
+    "/runtime-config": {
+      "get": {
+        "summary": "Safe runtime feature flags",
+        "responses": {
+          "200": {
+            "description": "Same-origin API prefix and capabilities"
+          }
+        }
+      }
+    },
+    "/cases": {
+      "get": {
+        "summary": "Search masked cases",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Masked case page"
+          },
+          "503": {
+            "description": "Engine is still indexing"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}": {
+      "get": {
+        "summary": "Read one engine-backed case",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^case_[0-9]{1,6}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verdict, proof diagnostic, steps, graph, timeline, and coverage"
+          },
+          "404": {
+            "description": "Unknown case"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}/graph": {
+      "get": {
+        "summary": "Read case-linked lineage",
+        "responses": {
+          "200": {
+            "description": "Typed nodes and evidence-linked edges"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}/timeline": {
+      "get": {
+        "summary": "Read two-clock timeline",
+        "responses": {
+          "200": {
+            "description": "Event time, capture time, and cutoff admissibility"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}/coverage": {
+      "get": {
+        "summary": "Read source and proof coverage",
+        "responses": {
+          "200": {
+            "description": "Actual observed counts and denominator note"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}/steps": {
+      "get": {
+        "summary": "Read engine-emitted steps",
+        "responses": {
+          "200": {
+            "description": "Advisory actions and verification steps"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}/evidence/{evidence_ref}": {
+      "get": {
+        "summary": "Read case-authorized masked evidence metadata",
+        "responses": {
+          "200": {
+            "description": "Allowlisted metadata only"
+          },
+          "404": {
+            "description": "Invalid or unlinked evidence reference"
+          }
+        }
+      }
+    },
+    "/cases/{case_id}/report": {
+      "get": {
+        "summary": "Download-safe sanitized Markdown report",
+        "responses": {
+          "200": {
+            "description": "Report with masked identity and no source paths"
+          }
+        }
+      }
+    },
+    "/commands/interpret": {
+      "post": {
+        "summary": "Preview a safe typed intent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text",
+                  "case_id"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "case_id": {
+                    "type": "string",
+                    "pattern": "^case_[0-9]{1,6}$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Allowlisted intent, target case, preview, and side_effects=false"
+          },
+          "403": {
+            "description": "Origin rejected"
+          },
+          "422": {
+            "description": "Ambiguous, unsupported, dangerous, or cross-case command"
+          }
+        }
+      }
+    },
+    "/investigations": {
+      "post": {
+        "summary": "Synchronously replay one selected case through the existing auditor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "case_id"
+                ],
+                "properties": {
+                  "case_id": {
+                    "type": "string",
+                    "pattern": "^case_[0-9]{1,6}$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Real engine result and elapsed time; no source mutations"
+          },
+          "404": {
+            "description": "Unknown case"
+          }
+        }
+      }
+    }
+  }
+}

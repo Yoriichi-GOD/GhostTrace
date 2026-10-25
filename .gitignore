@@ -1,0 +1,33 @@
+# Local corpus and generated submission artifacts
+/dataset/
+/output.csv
+/code.zip
+/agent-trace.zip
+/log.txt
+/unresolved.json
+
+/runs/
+/work/
+/ui/verification/
+/verification/
+/code/evaluation/evaluation_report.md
+/code/evaluation/usage_report.md
+/code/evaluation/run_manifest.json
+/code/evaluation/case_coverage.md
+/code/evaluation/sample_diff.md
+
+# Credentials and local environments
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.log
+.DS_Store
+Thumbs.db
