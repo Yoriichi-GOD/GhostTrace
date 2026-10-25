@@ -35,6 +35,12 @@ NEGATIVE_INTENT = re.compile(
     r"\bkeep my account\b|\bleave (?:the )?account active\b|"
     r"\bcontinue using\b|\bleave my profile\b|\bkeep the account as it is\b", re.I
 )
+NON_DELETION_SCOPE = re.compile(
+    r"\bwithout\s+(?:delet\w*|eras\w*|remov\w*|clos\w*)\b|"
+    r"\bnot\s+(?:a\s+)?request\s+to\s+(?:delete|erase|remove|close)\b|"
+    r"\b(?:remove|delete)\s+me\s+from\s+(?:the\s+)?(?:marketing|mailing|email)\s+lists?\s+only\b|"
+    r"\b(?:unsubscribe|opt\s*out)\b", re.I
+)
 POSITIVE_INTENT = re.compile(
     r"(?:delet|eras|remov|purge|close.{0,30}account|elimin|borr|suprim|"
     r"suppression|effac|exclu|apag|l[oö]sch|entfern|удал|删除|刪除|削除|消去|"
@@ -48,6 +54,14 @@ def authorizes_deletion(text: str) -> bool:
     if NEGATIVE_INTENT.search(text):
         # Politeness does not reverse negation ("please do not delete").
         return False
+    if NON_DELETION_SCOPE.search(text):
+        # An opt-out may accompany a separate explicit account-erasure request.
+        positive_remainder = NON_DELETION_SCOPE.sub("", text)
+        explicit_account_request = re.search(
+            r"\b(?:delete|erase|close|remove)\s+(?:(?:my|this|the)\s+)?(?:account|personal\s+data)\b",
+            positive_remainder, re.I)
+        if not explicit_account_request:
+            return False
     if QUESTION_ONLY.search(text) and not re.search(r"\b(?:please|i request|i want|i would like)\b", text, re.I):
         return False
     return bool(POSITIVE_INTENT.search(text))

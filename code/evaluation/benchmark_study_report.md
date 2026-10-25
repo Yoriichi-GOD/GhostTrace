@@ -1,3 +1,5 @@
+> Historical frozen research checkpoint. The ten unresolved cases and metrics below describe an earlier version. See evaluation_report.md and submission_changes.md for the current source.
+
 # Evaluation report
 
 Generated: `2026-10-25T08:30:52+00:00`.

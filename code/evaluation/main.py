@@ -752,8 +752,13 @@ def write_report(path: Path, metrics: dict[str, float | int], contract_errors: l
         "- A missing required retained record produces an unresolved obligation, never a destructive delete recommendation. SQLite imports reject ATTACH/DETACH and file/extension helper functions.",
         "- Indexed identity candidate selection retains the same final matching predicate. The benchmark harness compares all 518 outputs against exhaustive matching before claiming a speed benefit.",
         "- The public reference includes an analytics deletion step where the policy specifies anonymization. Raw reference metrics are retained without rewriting expected answers. Other disputed mappings require independent review.",
-        f"- The full output has evidence gaps: {proof_gaps} rows are labeled COMPLETE without an evidence-backed verification step. They are flagged by the contract checker and are not upload-ready.",
-        f"- {unresolved_cases} INCOMPLETE cases cannot supply a grounded full plan. Each missing required phase remains a hard validation error. Do not re-label the cases COMPLETE or invent steps to make the checker pass.",
+        (f"- The full output has {proof_gaps} COMPLETE rows without evidence-backed verification; these remain hard failures."
+         if proof_gaps else "- No full-output COMPLETE row lacks an evidence-backed verification step under the local checker."),
+        (f"- {unresolved_cases} INCOMPLETE cases cannot supply a grounded full plan. Each missing phase remains a hard validation error."
+         if unresolved_cases else "- All full-output INCOMPLETE rows supply finding, remediation and verification phases under the local checker."),
+        "- Escaped cloud log messages and syslog headers are parsed explicitly. Query identity is propagated only within a service/span and no later than the response; starting a lookup does not prove presence.",
+        "- Correction without removal, marketing-only opt-out and information requests explicitly excluding erasure are treated as non-deletion requests.",
+        "- A catalog filename can identify an object-storage screenshot record only when the selected object's size and version independently establish presence. Ambiguous filenames, mere search mentions and post-cutoff images do not establish proof.",
         "",
         "## Limits",
         "",

@@ -456,10 +456,36 @@ class EvidenceIndex:
                     fields.update(obj)
             except json.JSONDecodeError:
                 pass
-        pattern = re.compile(r"""([A-Za-z_][A-Za-z0-9_]*)=(?:"([^"]*)"|'([^']*)'|([^,\s]+))""")
-        for match in pattern.finditer(line):
-            value = next((v for v in match.groups()[1:] if v is not None), "")
-            fields.setdefault(match.group(1), value)
+        # Cloud log envelopes contain escaped key/value messages. Decode the
+        # quoted value before reading its fields; splitting at an escaped quote
+        # loses both resource IDs and the request/response correlation.
+        pattern = re.compile(r'''([A-Za-z_][A-Za-z0-9_]*)=(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|([^,\s]+))''')
+        def key_values(value: str) -> dict[str, str]:
+            result: dict[str, str] = {}
+            for match in pattern.finditer(value):
+                quoted, single, bare = match.groups()[1:]
+                item = quoted if quoted is not None else single if single is not None else bare or ""
+                if quoted is not None:
+                    try:
+                        item = json.loads('"' + quoted + '"')
+                    except json.JSONDecodeError:
+                        pass
+                result.setdefault(match.group(1), item)
+            return result
+        outer = key_values(line)
+        for key, value in outer.items():
+            fields.setdefault(key, value)
+        if isinstance(outer.get("message"), str):
+            for key, value in key_values(outer["message"]).items():
+                fields.setdefault(key, value)
+        if fields.get("requestId"):
+            fields.setdefault("trace_id", fields["requestId"])
+        if fields.get("function") in SYSTEM_NAMES:
+            fields.setdefault("system_id", fields["function"])
+        syslog = re.match(r"^\S+\s+<\d+>1\s+\S+\s+(\S+)\s+(\S+)\s+-\s+-\s+", line)
+        if syslog and syslog.group(1) in SYSTEM_NAMES:
+            fields.setdefault("system_id", syslog.group(1))
+            fields.setdefault("trace_id", syslog.group(2))
         stamp = re.match(r"^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.+-]+Z?)", line)
         if stamp:
             fields.setdefault("event_time", stamp.group(1))
@@ -470,7 +496,16 @@ class EvidenceIndex:
     def _parse_text(self, evidence_id: str, rel_path: str, captured: dt.datetime | None,
                     text: str, kind: str) -> None:
         parsed: list[tuple[str, dict[str, Any], list[str]]] = []
-        trace_context: dict[str, dict[str, Any]] = defaultdict(dict)
+        trace_context: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
+        identity_keys = {"user_id", "customer_reference", "subject_reference", "customer_id", "subject_id",
+                         "subject_ref", "subject_key", "correlation_key", "lookup_key", "match_key",
+                         "email", "email_address", "email_hash", "phone", "phone_number", "source"}
+        def trace_key(fields: dict[str, Any]) -> tuple[str, ...] | None:
+            trace = str(fields.get("trace_id") or "")
+            if not trace:
+                return None
+            service = fields.get("system_id") or fields.get("service") or fields.get("function") or ""
+            return (str(service), trace, str(fields.get("instance") or ""), str(fields.get("pod") or ""))
         image_resources = set(resource_ids(text)) if kind == "png" else set()
         image_emails = set(re.findall(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", text, re.I)) if kind == "png" else set()
         image_subjects = set(re.findall(r"\buser_\d+\b", text, re.I)) if kind == "png" else set()
@@ -485,26 +520,35 @@ class EvidenceIndex:
             explicit = fields.get("resource_id") or fields.get("record_id")
             if explicit:
                 ids.insert(0, str(explicit))
-            trace_id = str(fields.get("trace_id") or "")
-            if trace_id:
-                for key, value in fields.items():
-                    if key not in {"resource_id", "record_id", "line_text"}:
-                        prior = trace_context[trace_id].get(key)
-                        if prior is None:
-                            trace_context[trace_id][key] = value
-                        elif value != prior:
-                            values = prior if isinstance(prior, list) else [prior]
-                            if value not in values:
-                                values.append(value)
-                            trace_context[trace_id][key] = values
+            trace = trace_key(fields)
+            if trace:
+                trace_context[trace].append(fields)
             parsed.append((line, fields, list(dict.fromkeys(ids))))
         for line, fields, ids in parsed:
-            trace_id = str(fields.get("trace_id") or "")
-            if trace_id:
-                merged = dict(trace_context[trace_id])
-                merged.update(fields)
-                fields = merged
+            trace = trace_key(fields)
+            if trace:
+                # Carry only identity query context from earlier events in the
+                # same service/span. Never move state across rows or import an
+                # identity discovered after the state observation.
+                observed = get_record_time(fields, captured)
+                context: dict[str, Any] = {}
+                conflict = False
+                for prior in trace_context[trace]:
+                    happened = get_record_time(prior, captured)
+                    if observed is None or happened is None or happened > observed:
+                        continue
+                    for key in identity_keys & prior.keys():
+                        if key in context and norm(context[key]) != norm(prior[key]):
+                            conflict = True
+                        context.setdefault(key, prior[key])
+                if not conflict:
+                    fields = {**context, **fields}
             fields.setdefault("line_text", line)
+            if str(fields.get("event") or fields.get("event_name") or "").endswith("_started"):
+                # A query starting (even with a known resource ID) does not
+                # prove that its target exists. Its context remains available
+                # to the eventual response in the same span.
+                continue
             if kind == "png" and filtered_subject:
                 fields.setdefault("subject_reference", filtered_subject)
             if kind == "png":
@@ -535,6 +579,50 @@ class EvidenceIndex:
                 combined["line_text"] = list(entry["lines"])
                 self._add(evidence_id, rel_path, captured, rid, combined, rel_path + " " + image_text, image_text, kind)
                 del image_aggregate[(aggregate_evidence_id, rid)]
+
+    def _catalog_inventory(self, evidence_id: str, rel_path: str, captured: dt.datetime | None,
+                           text: str, origin: str) -> None:
+        """Join an exact catalog filename to a visible object metadata panel.
+
+        The catalog supplies identity/resource membership only; the screenshot
+        must independently show a size and version for that selected object.
+        """
+        if origin != "object_storage" or captured is None:
+            return
+        aliases: dict[str, list[dict[str, str]]] = defaultdict(list)
+        for activity in self.activities:
+            if (norm(activity.get("event_type")) != "link_resource_identity"
+                    or norm(activity.get("reported_result")) != "success"
+                    or norm(activity.get("target_system")) != origin):
+                continue
+            # The supplied attachment policy permits deletion only for an
+            # exclusively owned attachment. Do not infer exclusivity from a
+            # filename or from a shared ticket.
+            details = str(activity.get("details") or "")
+            if not re.search(r"\bbelongs only to\b", details, re.I):
+                continue
+            for filename in re.findall(r"[a-z0-9][a-z0-9_.-]*\.(?:pdf|png|jpe?g|txt|csv|zip)\b", details, re.I):
+                aliases[norm(filename)].append(activity)
+        for filename, links in aliases.items():
+            resource_ids_ = {row.get("resource_id") for row in links}
+            if len(resource_ids_) != 1:
+                continue
+            match = re.search(rf"(?<![\w.-]){re.escape(filename)}(?![\w.-])", text, re.I)
+            if not match:
+                continue
+            panel = text[match.start():match.end() + 350]
+            # A search query or a filename mentioned in an activity feed is
+            # insufficient. Require the selected object's metadata panel.
+            if (not re.search(r"\bSize\s+\d+(?:\.\d+)?\s*(?:KB|MB|GB|bytes)\b", panel, re.I)
+                    or not re.search(r"\bVersion\s+v\d+\b", panel, re.I)
+                    or re.search(r"\b(?:not found|deleted|no match)\b", panel, re.I)):
+                continue
+            resource_id = next(iter(resource_ids_))
+            fields = {"system_id": origin, "data_category": "SUPPORT_ATTACHMENT",
+                      "file_name": filename, "state": "PRESENT", "observed_at": captured.isoformat(),
+                      "exclusive_attachment": True}
+            self._add(evidence_id, rel_path, captured, str(resource_id), fields,
+                      "object storage selected attachment metadata", panel, "png")
 
     def _pdf_text(self, path: Path) -> str:
         data = path.read_bytes()
@@ -789,6 +877,8 @@ class EvidenceIndex:
                         text = self._external_text(path, kind)
                     if text:
                         self._parse_text(evidence_id, rel_path, captured, text, kind)
+                        if kind == "png":
+                            self._catalog_inventory(evidence_id, rel_path, captured, text, item.get("origin", ""))
                     else:
                         self.unparsed.append(rel_path)
             except (OSError, sqlite3.Error, json.JSONDecodeError, ValueError):
