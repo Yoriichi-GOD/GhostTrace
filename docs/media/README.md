@@ -16,3 +16,9 @@ The fixture uses fictional `example.test` identities. The application masks them
 Application files were copied byte for byte into an isolated local review directory. No runtime code or product feature was changed to produce the captures. Capture requests were restricted to loopback; no external preview service was used.
 
 The ghost illustrations and cosmic background are existing interface artwork. They are decoration, not evidence diagrams. The relationship graph itself renders the auditor's links. These captures do not establish a built-in demo gallery, real-world accuracy or production readiness.
+
+## README branding and illustrations
+
+[ghosttrace-banner.svg](ghosttrace-banner.svg) is a decorative vector wordmark using the existing Noir palette: midnight blue, cream and gold. It contains no product screenshot, evidence claim, metric or remote resource.
+
+The README's detective, evidence, books and orbital ghost PNGs are the existing assets in [public/assets/ghosttrace/](../../public/assets/ghosttrace/). They illustrate the workflow and navigation. They are not screenshots, evidence records or claims of additional product functionality. The source artwork files were not changed.

@@ -1,12 +1,23 @@
-# GhostTrace
+<h1 align="center">
+  <img src="docs/media/ghosttrace-banner.svg" width="100%" alt="GhostTrace" />
+</h1>
 
-**Deletion isn't a status. It's something you prove.**
+<p align="center">
+  <strong>Deletion isn't a status. It's something you prove.</strong><br />
+  <sub>Trace identities. Inspect evidence. Review the proof.</sub>
+</p>
 
 GhostTrace helps privacy engineers and audit reviewers investigate a reported data deletion. It connects current and historical identifiers to surviving records, checks the evidence against policy and an audit cutoff, and produces findings, ordered recommendations and verification checks.
 
 **Status:** working local investigation prototype with an offline Python CLI and browser dashboard. Read-only: it recommends actions; it never deletes records or certifies compliance. No API key is required. There is no hosted demo or live model integration in this checkout.
 
-[See the product](#the-product) · [Reviewer walkthrough](docs/REVIEWER_GUIDE.md) · [Run locally](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Evidence & reports](docs/EVIDENCE.md)
+<p align="center">
+  <a href="#the-product">See the product</a> ·
+  <a href="docs/REVIEWER_GUIDE.md">Reviewer walkthrough</a> ·
+  <a href="docs/SETUP.md">Run locally</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/EVIDENCE.md">Evidence &amp; reports</a>
+</p>
 
 ## The product
 
@@ -22,12 +33,35 @@ A deletion workflow can say **COMPLETE** while a search index, analytics profile
 
 GhostTrace checks the underlying evidence rather than accepting the workflow's claim:
 
-1. **Resolve the subject.** Check deletion intent and reconstruct current and historical identifiers.
-2. **Follow the evidence.** Find attributable records and respect both event time and capture time at the audit cutoff.
-3. **Apply the policy.** Distinguish deletion, redaction, anonymization, retention and recreation risks.
-4. **Review the result.** Inspect cited findings, ordered recommendations and future verification checks. Export a sanitized report or the challenge CSV.
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="public/assets/ghosttrace/ghost-detective-rocks.png" width="125" alt="" /><br />
+      <strong>01 · Trace identity</strong><br />
+      Recover current and past identifiers.
+    </td>
+    <td align="center" width="34%">
+      <img src="public/assets/ghosttrace/ghost-central-evidence.png" width="205" alt="" /><br />
+      <strong>02 · Inspect evidence</strong><br />
+      Link records. Check time and policy.
+    </td>
+    <td align="center" width="33%">
+      <img src="public/assets/ghosttrace/ghost-cases-books.png" width="125" alt="" /><br />
+      <strong>03 · Review proof</strong><br />
+      Cite findings. Plan fixes and checks.
+    </td>
+  </tr>
+</table>
 
-The same auditor powers the CLI and dashboard. The browser shows masked, case-scoped metadata; it does not make a second set of deletion decisions.
+<sub>The ghost illustrations are existing interface artwork. The product screenshots show the working application.</sub>
+
+The same auditor powers the CLI and dashboard. It checks deletion intent before auditing and can export a sanitized report or the challenge CSV. The browser shows masked, case-scoped metadata; it does not make a second set of deletion decisions.
+
+### From a finding to its source
+
+![Working GhostTrace lineage view: masked identifiers connect to a surviving search resource, with its admissible source open in the inspector.](docs/media/evidence-lineage.png)
+
+*Same actual synthetic-case investigation as above: the evidence stays attached to the finding. [Follow the walkthrough →](docs/REVIEWER_GUIDE.md)*
 
 ## Run locally
 
@@ -70,6 +104,11 @@ The submission closed structural gaps while raw public step/field agreement decr
 **Planned, not implemented here:** the Nebius/NVIDIA model-driven investigation extension, autonomous tool loop and public hosted demo. A separate synthetic demo gallery, streaming progress/cancellation and full redacted excerpts are also absent. The documentation screenshots use a temporary test fixture; they do not imply a built-in demo mode.
 
 ## Find your next step
+
+<p align="center">
+  <img src="public/assets/ghosttrace/ghost-brand-emblem-only.png" width="160" alt="" /><br />
+  <strong>Pick a trail. Keep the evidence.</strong>
+</p>
 
 | You want to… | Go to |
 | --- | --- |

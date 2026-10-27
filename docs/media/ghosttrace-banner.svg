@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="260" viewBox="0 0 1400 260" role="img" aria-labelledby="title desc">
+  <title id="title">GhostTrace</title>
+  <desc id="desc">A midnight blue and gold GhostTrace wordmark with orbital paths, stars and evidence nodes. Decorative project branding.</desc>
+  <defs>
+    <linearGradient id="night" x2="1" y2="1"><stop stop-color="#080b13"/><stop offset=".55" stop-color="#111831"/><stop offset="1" stop-color="#090b10"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#3350a5" stop-opacity=".4"/><stop offset="1" stop-color="#3350a5" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gold"><stop stop-color="#9b7137"/><stop offset=".45" stop-color="#f1d39a"/><stop offset="1" stop-color="#ad8346"/></linearGradient>
+  </defs>
+  <rect x="1" y="1" width="1398" height="258" rx="22" fill="url(#night)" stroke="#9e7d47" stroke-opacity=".5"/>
+  <ellipse cx="1170" cy="100" rx="330" ry="220" fill="url(#halo)"/>
+  <ellipse cx="160" cy="245" rx="320" ry="180" fill="url(#halo)"/>
+  <g fill="none" stroke="#cda669" stroke-opacity=".22">
+    <ellipse cx="1190" cy="125" rx="176" ry="64" transform="rotate(-28 1190 125)"/>
+    <ellipse cx="1190" cy="125" rx="124" ry="98" transform="rotate(28 1190 125)"/>
+    <path d="M28 220Q140 72 300 128M1130 260Q1230 70 1396 110"/>
+  </g>
+  <g fill="#e7c58c">
+    <circle cx="98" cy="62" r="2"/><circle cx="208" cy="196" r="2"/><circle cx="1270" cy="47" r="2"/>
+    <circle cx="1332" cy="174" r="2"/><circle cx="1149" cy="218" r="1.5"/><circle cx="370" cy="43" r="1.5"/>
+    <path d="M1190 83l5 34 34 8-34 5-5 34-6-34-34-5 34-8z"/>
+    <path d="M153 105l3 14 14 3-14 3-3 14-3-14-14-3 14-3z"/>
+  </g>
+  <g fill="none" stroke="#cda669" stroke-opacity=".55">
+    <path d="M1120 182l70-57 91-22"/>
+    <circle cx="1120" cy="182" r="5" fill="#111831"/><circle cx="1281" cy="103" r="5" fill="#111831"/>
+  </g>
+  <text x="690" y="152" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="88" letter-spacing="12" fill="#f3e9d6">GHOSTTRACE</text>
+  <path d="M470 187H910" stroke="url(#gold)" stroke-width="2"/>
+  <circle cx="690" cy="187" r="4" fill="#e7c58c"/>
+</svg>
