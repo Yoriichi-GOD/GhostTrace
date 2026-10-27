@@ -1,5 +1,7 @@
 # GhostTrace local dashboard — Noir
 
+[Project overview](../../README.md) · [Setup guide](../../docs/SETUP.md) · [Reviewer walkthrough](../../docs/REVIEWER_GUIDE.md)
+
 This is a loopback-only, read-only browser view over the existing `code/main.py` `Auditor`. It uses one origin for the static UI and the `/api/ghosttrace/v1` API. The launcher asks the operating system for an available loopback port, prints the actual browser address, and does not inspect or stop other servers.
 
 ## Run it
@@ -22,14 +24,16 @@ The launcher accepts an optional `--repo` path for running the dashboard code ag
 - A typed command preview for the documented read-only intents. Wispr Flow can enter text in the textarea; there is no claimed Wispr API or fabricated microphone state.
 - A selected-case investigation command that synchronously replays the current Python auditor and reports the actual elapsed time.
 - Sanitized Markdown report download; reports say no records were modified.
-- Local HTTP security headers, loopback and Host checks, same-origin checks for the only POST route, request-size limit, and no mutation endpoints.
+- Local HTTP security headers, loopback and Host checks, same-origin checks for POST routes, request-size limit, and no mutation endpoints.
 - Port discovery at runtime; all browser API paths are origin-relative.
 
-## Known limits and QA state
+## Known limits and recorded QA state
 
 The Noir redesign keeps the existing accessible native HTML/CSS/JavaScript architecture. See [NOIR_REDESIGN.md](NOIR_REDESIGN.md) for the design, verification evidence and requirement checklist. The current engine does not supply fully redacted excerpts, a dependency-aware remediation graph, worker cancellation/SSE, or an independently generated synthetic demo pack. The inspector therefore withholds raw excerpts and shows allowlisted metadata only. The lineage graph is an interactive SVG canvas over the existing engine relationships, with zoom, pan, fit, filters, source selection and a keyboard-readable relationship table. The UI marks engine `COMPLETE` cases with no admissible verification reference as **INSUFFICIENT EVIDENCE**; it does not rewrite the engine result or CSV.
 
-The dashboard is not a submission artifact and should stay outside `code.zip`. It does not mutate the dataset or root output files. Browser data is not saved in local storage. Development screenshots are retained privately and are not bundled here. Build footage is submitted separately.
+The dashboard does not mutate the dataset or root output files. Browser data is not saved in local storage. [Public documentation screenshots](../../docs/media/README.md) show the actual application on an owned synthetic test fixture; participant screenshots and private build artifacts are not bundled here. Existing submission archives remain frozen and are not repackaged by documentation updates.
+
+The table below records the 25 October 2026 UI verification. It is historical evidence, not a fresh test log for every later commit. The Noir record includes older case-count snapshots; the later submission distribution is recorded in the [usage report](../evaluation/usage_report.md).
 
 | Requirement | Status |
 | --- | --- |

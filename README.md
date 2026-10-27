@@ -1,90 +1,90 @@
-# GhostTrace 👻
+# GhostTrace
 
 **Deletion isn't a status. It's something you prove.**
 
-A local, read-only investigation workspace that checks whether a reported deletion is supported by evidence. GhostTrace links current and historical identifiers to surviving records, applies deletion policy, and shows findings, proposed remediation and verification checks.
+GhostTrace helps privacy engineers and audit reviewers investigate a reported data deletion. It connects current and historical identifiers to surviving records, checks the evidence against policy and an audit cutoff, and produces findings, ordered recommendations and verification checks.
 
-## Wispr Flow × Hacker House Goa
+**Status:** working local investigation prototype with an offline Python CLI and browser dashboard. Read-only: it recommends actions; it never deletes records or certifies compliance. No API key is required. There is no hosted demo or live model integration in this checkout.
 
-Development was directed through spoken instructions dictated with Wispr Flow to an AI coding assistant. The assistant generated and revised code; the workflow was build, test, inspect the result, then dictate the next correction. Watch the actual voice-driven development workflow: **[Wispr Flow × GhostTrace build-process video](https://youtu.be/rw3gSNBh9HQ)**.
+[See the product](#the-product) · [Reviewer walkthrough](docs/REVIEWER_GUIDE.md) · [Run locally](docs/SETUP.md) · [Architecture](docs/ARCHITECTURE.md) · [Evidence & reports](docs/EVIDENCE.md)
 
-Wispr is the dictation tool used during development. The application itself runs offline and makes no model API calls. No Wispr SDK, Gemini, NVIDIA or OpenRouter integration is required to run it.
+## The product
 
-## Try one investigation
+![GhostTrace's working dashboard: a reported COMPLETE deletion is audited as INCOMPLETE, with case context, proof coverage and a source inspector.](docs/media/investigation-overview.png)
 
-1. Open a case and compare the reported deletion status with the evidence-backed audit result.
-2. Follow its identifier/resource relationships, inspect source metadata and check the audit cutoff.
-3. Review the ordered recommendations and export a sanitized Markdown report.
+*Actual application, captured locally on an existing project-authored synthetic historical-alias fixture. This is a working screen, not a mockup or a participant-dataset screenshot. [Screenshot provenance](docs/media/README.md).*
 
-For example, in the supplied challenge workload, `case_104` reports COMPLETE while the local auditor finds an attributable search record, an analytics profile and an active data flow. This is a demonstration of the submitted code on that participant dataset, not a claim about a real company's systems.
+**Start here:** [follow one investigation](docs/REVIEWER_GUIDE.md). To see how it was built, watch the [Wispr Flow voice-driven development recording](https://youtu.be/rw3gSNBh9HQ). That video documents development; it is not a hosted product demo or evidence of a model API integration.
 
-The UI supports resizable panels, an expanded investigation view, a graph/table relationship view and a timeline. Its command box accepts read-only requests typed or dictated through Wispr, previews the interpreted intent, and rejects destructive commands. Voice interaction with the finished app is separate from the recorded development process.
+## Why it exists
 
-**GhostTrace never executes deletions or remediation.** It presents recommendations and future checks; it does not certify that a deletion has happened.
+A deletion workflow can say **COMPLETE** while a search index, analytics profile, replica or restore path still holds or recreates personal data. Old identifiers can hide those copies. Some records must instead be retained, redacted or anonymized under the supplied policy.
+
+GhostTrace checks the underlying evidence rather than accepting the workflow's claim:
+
+1. **Resolve the subject.** Check deletion intent and reconstruct current and historical identifiers.
+2. **Follow the evidence.** Find attributable records and respect both event time and capture time at the audit cutoff.
+3. **Apply the policy.** Distinguish deletion, redaction, anonymization, retention and recreation risks.
+4. **Review the result.** Inspect cited findings, ordered recommendations and future verification checks. Export a sanitized report or the challenge CSV.
+
+The same auditor powers the CLI and dashboard. The browser shows masked, case-scoped metadata; it does not make a second set of deletion decisions.
 
 ## Run locally
 
-Requires Python 3.10 or newer. The tested full-evidence environment was Windows with the included native OCR bridge. Other systems may use Tesseract; full OCR parity across platforms has not been verified.
+Requires **Python 3.10+** and the separately supplied participant-facing `dataset/`. This public repository does not redistribute the challenge corpus. The full-evidence run was recorded on Windows; OCR parity on other platforms is unverified.
 
-Obtain the participant-facing `dataset/` from the [HackerRank challenge starter](https://github.com/interviewstreet/hackerrank-orchestrate-october26) and place it in this repository root. The dataset is not redistributed here. Use participant-facing evidence only.
-
-~~~powershell
+```sh
 python code/dashboard/serve.py
-~~~
+```
 
-Open the actual loopback address printed by the launcher. The server chooses an available port; there is no fixed-port requirement, Node build, hosted backend or provider API key.
+Open the loopback address printed by the launcher. It chooses an available port. There is no Node build, hosted backend or provider key to configure.
 
-To generate and evaluate the challenge output:
+**No dataset yet?** The authored scenario and regression checks can run without it. See [setup, corpus requirements and safe output paths](docs/SETUP.md).
 
-~~~powershell
-python code/main.py --repo . --diagnostics unresolved.json
-python code/evaluation/main.py --repo .
-~~~
+## What the evidence supports
 
-The generator exits nonzero for unresolved proof obligations or unread evidence. The evaluator fails contract errors. A CSV being written is not by itself proof that the answers are correct.
+These are **recorded results from the 25 October 2026 submission checkpoint**, not new benchmark measurements from this documentation pass.
 
-## What the current code has proved locally
+| Measurement | Recorded result | Scope |
+| --- | --- | --- |
+| Output contract | 518 rows; 0 strict errors | Local structural validation, not hidden-label accuracy |
+| Public status agreement | 29/32 (90.62%) | Public development requests |
+| Exact ordered sequences | 8/32 (25.00%) | Same 32 requests; stronger criterion than status |
+| Step F1 | 62.15% | 161 predicted / 193 reference steps |
+| Positional field agreement | 945/1365 (69.23%) | Fields compared at matching array positions |
 
-| Check | Recorded result |
+Sources: [evaluation report](code/evaluation/evaluation_report.md), [runtime and output provenance](code/evaluation/usage_report.md). Hidden-case accuracy is unknown. The local validator shares parsing logic with the solver; it is not an independent correctness oracle. The authored scenarios were reused during development.
+
+The submission closed structural gaps while raw public step/field agreement decreased from the earlier research checkpoint. [Both results and the tradeoff are retained](code/evaluation/submission_changes.md). See the [evidence guide](docs/EVIDENCE.md) for separate software-check populations, timing scope and historical study limits.
+
+## Capabilities and boundaries
+
+| Available in this checkout | Boundary |
 | --- | --- |
-| Full target output | 518 rows; 0 local strict contract errors |
-| Unresolved target diagnostics / unread evidence files | 0 / 0 on the tested Windows run |
-| Public sample status agreement | 29/32 |
-| Public exact ordered sequences | 8/32 |
-| Public step F1 / positional field accuracy | 62.15% / 69.23% |
-| Project-authored scenarios | 100/100 |
-| Metamorphic/security probes | 115/115 |
-| Built-in custom checks / new submission regressions | 18/18 / 12/12 |
-| Dashboard API regressions | 14/14 |
+| Identity history, cutoff-aware evidence parsing and policy checks | Parser coverage and independent real-world validation remain limited |
+| Case search, filters, timeline, relationship graph/table and resizable panels | Relationships come from engine links; this is not a causal recreation model |
+| Masked evidence inspector and sanitized Markdown export | Allowlisted metadata only; no raw document or image previews |
+| Typed or Wispr-dictated read-only commands and engine replay | Controlled command grammar, not an open-ended model agent |
+| Offline CLI and local HTTP API | No hosted service, production connectors or executed remediation |
 
-The exact submission source was replayed from a clean extraction and reproduced the 518-row output byte for byte. These populations are separate. The 100 scenarios were reused during development and are not an independent holdout. Hidden-case accuracy is unknown, and structural validity does not establish semantic correctness. No external GDPRbench, FEBRL4, ALCE or AgentDojo score is claimed.
+**Planned, not implemented here:** the Nebius/NVIDIA model-driven investigation extension, autonomous tool loop and public hosted demo. A separate synthetic demo gallery, streaming progress/cancellation and full redacted excerpts are also absent. The documentation screenshots use a temporary test fixture; they do not imply a built-in demo mode.
 
-See [current evaluation](code/evaluation/evaluation_report.md), [runtime usage](code/evaluation/usage_report.md), [changes after the frozen research study](code/evaluation/submission_changes.md) and [benchmark methods](BENCHMARKS.md). The public step/field agreement decreased from the earlier research checkpoint while target structural failures were closed; both results are retained.
+## Find your next step
 
-## Reproduce the software checks
-
-The following first three commands use project-authored synthetic data and do not require the contest dataset:
-
-~~~powershell
-python scenario_suite.py --engine code --output runs/check/scenarios.json
-python stress_suite.py --engine code --output runs/check/stress.json
-python -m unittest discover -s code/evaluation -p "test_regressions.py" -v
-~~~
-
-Dashboard integration tests additionally require the participant dataset:
-
-~~~powershell
-python -m unittest discover -s code/dashboard/tests -p "test_*.py" -v
-~~~
-
-## Architecture and limits
-
-The same Python auditor drives both the CLI and browser API. It resolves identity history, parses evidence, enforces capture/event cutoffs, applies policy and serializes findings and recommendations. The browser renders masked, case-scoped projections; it does not generate verdicts.
-
-Important remaining limits include public-sample sequence disagreement, parser coverage, unverified cross-platform OCR parity, and incomplete real-world validation. Evidence inspection currently exposes allowlisted metadata rather than raw document/image previews. The relationship graph shows existing engine links; it is not an inferred causal recreation model. The product is a local investigation prototype, not a production compliance service.
+| You want to… | Go to |
+| --- | --- |
+| Assess one concrete investigation | [Reviewer guide](docs/REVIEWER_GUIDE.md) |
+| Run the dashboard, CLI or checks | [Setup guide](docs/SETUP.md) |
+| Understand the engine and read-only boundary | [Architecture and limitations](docs/ARCHITECTURE.md) |
+| Check measurements, sources and deliverables | [Evidence and reports](docs/EVIDENCE.md) |
+| Reproduce a benchmark with a new run tag | [Benchmark methods](BENCHMARKS.md) |
+| Inspect API routes and schemas | [API contract](code/dashboard/API_CONTRACT.md) · [OpenAPI](code/dashboard/web/openapi.json) |
+| Read the original challenge specification | [Problem statement](problem_statement.md) |
 
 ## Provenance
 
-The problem, participant dataset and starter specification come from HackerRank Orchestrate's Ghost Data Still Exists challenge. Wispr Flow was used for voice-driven development with an AI coding assistant; this does not imply a partnership or endorsement. The displayed screenshot shows masked fictional participant-case metadata. Cormorant Garamond, Manrope and IBM Plex Mono are self-hosted with their OFL notices in `public/assets/fonts/`.
+Built for HackerRank Orchestrate's **Ghost Data Still Exists** challenge, with its participant-facing problem and policy. Wispr Flow was used to dictate development instructions to an AI coding assistant; it is not an embedded SDK or an endorsement. The submitted program makes zero model API calls; development-assistant usage is separate.
 
-Private transcripts, structured traces, generated prediction files, footage and credentials are excluded from this public repository. The private research paper and decks describe a separate frozen checkpoint, not a publication or contest acceptance.
+The ghost artwork belongs to the existing Noir interface. Cormorant Garamond, Manrope and IBM Plex Mono are self-hosted with their [bundled OFL notices](public/assets/fonts/). No repository-wide license is currently declared.
+
+The challenge dataset, predictions, submission archives, private research drafts, transcripts, agent traces and credentials remain outside the public source. No publication, contest selection, legal certification or production-readiness claim is made.
